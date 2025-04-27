@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  ai-assistant:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-assistant
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./documents:/app/documents
+      - ./chroma_db:/app/chroma_db
+    environment:
+      - DOCUMENTS_DIR=/app/documents
+      - VECTOR_STORE_DIR=/app/chroma_db
+      - LOG_LEVEL=INFO
+      - LOG_FILE=/app/logs/app.log
+      - ENABLE_CONVERSATION_MEMORY=true
+      - MAX_REQUESTS_PER_MINUTE=60
+      - ENVIRONMENT=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - ai-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+networks:
+  ai-network:
+    driver: bridge
+
+volumes:
+  documents:
+    driver: local
+  chroma_db:
+    driver: local
+  logs:
+    driver: local
